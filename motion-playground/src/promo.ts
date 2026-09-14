@@ -5,4 +5,4 @@
  * 填了就显示入口,留空就不显示 —— 所以这不是"要不要显示"的
  * 开关判断,而是"有没有地址"这一件事,少一个要另外维护的状态。
  */
-export const PROMO_URL = "https://jeszhou.github.io/overlay-studio/";
+export const PROMO_URL = "https://www.overlaystudio.cn/";

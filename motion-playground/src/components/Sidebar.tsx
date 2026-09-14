@@ -369,7 +369,7 @@ export function Sidebar({
               <a className="fx-promo" href={PROMO_URL} target="_blank" rel="noreferrer">
                 <span className="fx-promo-t">没找到想要的表达?</span>
                 <span className="fx-promo-d">
-                  这一份是基础版。专业版有更多动效卡、更懂内容的 AI 编排,也可以直接找作者聊 —— 看两版差在哪 ↗
+                  这一份是基础版。专业版有更多动效卡、更懂内容的 AI 编排,也可以直接找作者聊 —— 去官网看 ↗
                 </span>
               </a>
             ) : null}

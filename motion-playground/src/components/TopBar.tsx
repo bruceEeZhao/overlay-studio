@@ -257,9 +257,9 @@ export function TopBar({
           href={PROMO_URL}
           target="_blank"
           rel="noreferrer"
-          title="看基础版和专业版差在哪,以及怎么联系作者"
+          title="去官网看基础版和专业版差在哪,以及怎么联系作者"
         >
-          看专业版 ↗
+          官网 ↗
         </a>
       ) : null}
 
