@@ -27,6 +27,9 @@ motion-playground/exports/
 # 自己生成的编排文件只留本地
 /overlay*.json
 
+# 每期工程目录:原片、字幕稿、编排 JSON、进度状态全在本地,不进仓库
+projects/
+
 # 临时截图脚本
 motion-playground/_*.mjs
 
