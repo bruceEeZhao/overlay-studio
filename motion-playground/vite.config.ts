@@ -84,16 +84,29 @@ function saveUpload(
  * Windows 上杀毒/索引器会短暂占住刚写完的文件,改名报 EPERM/EBUSY,过几百毫秒基本都能过。
  * 以前这里的退路是 copyFileSync:草稿和目标永远在同一个目录,「跨盘」根本不会发生;
  * 文件被占时复制一样失败;真跑起来还是几百 MB 的同步复制,会把单线程的服务卡死几十秒。
+ *
+ * 2026-09-25:重试总窗口从 1.7 秒拉到 ~16 秒。起因是客户导入一段 1.5GB 的录屏,
+ * 刚写完的草稿被 Windows Defender 整文件扫了一遍,1.7 秒内 4 次改名全撞 EPERM
+ * (文件越大,写完后的扫描窗口越长,小文件从来碰不到)。末尾再补一道异步 copy
+ * 兜底:copy 只需要对草稿的读权限 + 对目标的写权限,不像 rename 要两边都拿到删除权,
+ * 草稿被扫描占着时它照样能过;走 fs.promises 线程池,不会把事件循环卡死。
  */
 async function renameWithRetry(tmp: string, dest: string) {
-  const waits = [0, 200, 500, 1000]
+  const waits = [0, 250, 500, 1000, 2000, 4000, 8000]
   for (let i = 0; i < waits.length; i++) {
     if (waits[i]) await new Promise((r) => setTimeout(r, waits[i]))
     try {
       fs.renameSync(tmp, dest)
       return
     } catch (e) {
-      if (i === waits.length - 1) throw e
+      if (i === waits.length - 1) {
+        await fs.promises.copyFile(tmp, dest)
+        try {
+          fs.rmSync(tmp, { force: true })
+        } catch (e) {
+          console.error(`[upload] 兜底 copy 成功,但草稿删不掉(留着,下次启动再清):${tmp}`, e)
+        }
+      }
     }
   }
 }
