@@ -57,3 +57,6 @@ motion-playground/public/sfx/*
 .codebuddy/skills/overlay-fx-generator/我的偏好.md
 .workbuddy/skills/overlay-fx-generator/经验规则.md
 .workbuddy/skills/overlay-fx-generator/我的偏好.md
+
+# Agent 的每日工作日志(只留本机)
+.workbuddy/memory/
