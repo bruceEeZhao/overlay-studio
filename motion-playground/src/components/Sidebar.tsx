@@ -128,6 +128,32 @@ export function Sidebar({
     })).filter((g) => g.effects.length > 0);
   }, [fxKw]);
   const fxListRef = useRef<HTMLDivElement>(null);
+  // 播放头正落在哪张卡上:列表里那一行跟着亮,不用盯着画布猜"现在播的是哪张"。
+  // 和画布的 activeCards 判断差一点点:那边提前 0.05s 挂载(等进场动画),
+  // 这一栏是给人看的,按真实起止时间走,不提前 —— 否则时间码还没到就已经亮起来了。
+  const playingIds = useMemo(() => {
+    const s = new Set<string>();
+    if (!overlay) return s;
+    for (const c of overlay.cards) if (curT >= c.start && curT < c.end) s.add(c.id);
+    return s;
+  }, [overlay, curT]);
+  // 同屏多张时滚到最下面那张(数组靠后 = 画在上层 = 观众最先看到的那张)
+  const leadPlayingId = useMemo(() => {
+    if (!overlay) return null;
+    for (let i = overlay.cards.length - 1; i >= 0; i--) {
+      if (playingIds.has(overlay.cards[i].id)) return overlay.cards[i].id;
+    }
+    return null;
+  }, [overlay, playingIds]);
+  // 播到下一张时把它滚进可视区。只在"换张"那一刻滚(curT 每帧都在动,但
+  // leadPlayingId 只在跨过卡边界时才变),不是每帧 scrollIntoView —— 那会让列表抖个不停。
+  // 手动点某张卡时会 seek 到它的起点,leadPlayingId 正好也变成它,不会跟选中态打架。
+  useEffect(() => {
+    if (tab !== "edit" || view !== "cards" || !leadPlayingId) return;
+    fxListRef.current
+      ?.querySelector(`[data-card-id="${CSS.escape(leadPlayingId)}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [tab, view, leadPlayingId]);
   // ↑ ↓ = 上一张 / 下一张卡,两个模式都能用:
   // 效果库走过滤后的卡片库,编辑台走时间轴上的卡(和点一下一样,播放头跟着跳过去)。
   // 编辑台的「字幕稿」视图不接管方向键 —— 那儿没有"卡"这个东西。
@@ -207,11 +233,24 @@ export function Sidebar({
               {overlay && overlay.cards.length > 0 ? (
                 overlay.cards.map((c, i) => {
                   const def = effects.find((e) => e.id === c.kind);
+                  const on = playingIds.has(c.id);
+                  // 同屏常常不止一张(字幕轨/章节条是常驻卡,一挂就是整条片子)。
+                  // 全亮一遍等于没亮 —— 只有画在最上面那张是"主角",拿全套高亮;
+                  // 其余同屏的只留一条淡进度线,看得见在播,但不抢焦点。
+                  const lead = on && c.id === leadPlayingId;
+                  // 卡内进度:这张卡自己播到百分之几了,画成底边那条线
+                  const p = on
+                    ? Math.min(1, Math.max(0, (curT - c.start) / Math.max(c.end - c.start, 0.01)))
+                    : 0;
                   return (
                     <button
                       key={c.id}
-                      className={`fx-item fx-item--row ${c.id === selCardId ? "is-on" : ""}`}
+                      data-card-id={c.id}
+                      className={`fx-item fx-item--row ${c.id === selCardId ? "is-on" : ""} ${
+                        on ? "is-playing" : ""
+                      } ${lead ? "is-lead" : ""}`}
                       onClick={() => onSelectCard(c.id)}
+                      title={lead ? "▶ 正在播放这张" : on ? "同时在播(背景卡)" : undefined}
                     >
                       <span className="fx-idx">{String(i + 1).padStart(2, "0")}</span>
                       <span className="fx-meta">
@@ -222,8 +261,10 @@ export function Sidebar({
                         <span className="fx-desc">{def?.description.split(" · ")[0] ?? ""}</span>
                       </span>
                       <span className="fx-time">
+                        {lead && <i className="fx-play" />}
                         {fmtT(c.start)}–{fmtT(c.end)}
                       </span>
+                      {on && <i className="fx-prog" style={{ width: `${(p * 100).toFixed(1)}%` }} />}
                     </button>
                   );
                 })

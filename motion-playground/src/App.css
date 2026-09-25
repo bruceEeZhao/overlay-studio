@@ -69,6 +69,7 @@
   border: none;
   border-bottom: 1px solid var(--hairline);
   border-radius: 0;
+  position: relative; /* .fx-prog 进度线贴着行底画 */
   transition: background 180ms ease, box-shadow 180ms ease;
 }
 .fx-item:hover {
@@ -77,6 +78,68 @@
 .fx-item.is-on {
   background: var(--fill-subtle);
   box-shadow: inset 2px 0 0 var(--accent);
+}
+/* 播放头正落在这张卡上(编辑台卡片视图):跟着播放进度高亮。
+   和 is-on 是两件事 —— 选中 = 你要改它,播放中 = 画面上正演它。
+   故意不去动 selCardId:播放时把右栏参数面板跟着甩来甩去,改参数的手会断。 */
+.fx-item.is-playing .fx-name {
+  color: var(--accent);
+}
+.fx-item.is-playing .fx-idx,
+.fx-item.is-playing .fx-time {
+  color: var(--ink);
+}
+/* is-lead = 同屏几张里画在最上面那张(常驻的字幕轨/章节条不算主角)。
+   全屏高亮只给它,其余同屏的留一条淡线就够了。 */
+.fx-item.is-playing.is-lead {
+  background: var(--fill-hover);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.fx-item.is-playing.is-lead .fx-name {
+  font-weight: 600;
+}
+.fx-item.is-playing.is-lead .fx-desc {
+  color: var(--ink-muted);
+}
+/* 行底那条线 = 这张卡自己播到百分之几了 */
+.fx-prog {
+  position: absolute;
+  left: 0;
+  bottom: -1px; /* 盖住行分隔线,不然线下面还留一条灰缝 */
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.32; /* 同屏陪跑的卡:看得见在播,但不抢主角 */
+  pointer-events: none;
+}
+.is-lead .fx-prog {
+  height: 2px;
+  opacity: 1;
+}
+/* 时间码前面的小三角:呼吸一下,余光里也能看见它亮着 */
+.fx-play {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 5px;
+  vertical-align: 1px;
+  border-left: 6px solid var(--accent);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  animation: fx-play-pulse 1.3s ease-in-out infinite;
+}
+@keyframes fx-play-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-play {
+    animation: none;
+  }
 }
 /* 编辑台卡片行:序号 | 名称+类型 | 右对齐时间码 */
 .fx-item--row {
